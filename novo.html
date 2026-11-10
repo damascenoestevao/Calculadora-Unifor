@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Notas Unifor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; padding-bottom: 40px; }
+    header { background-color: #1e3a8a; color: white; padding: 20px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    main { max-width: 650px; margin: 24px auto; padding: 0 16px; }
+    .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .info-box { background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 16px; margin-bottom: 24px; color: #78350f; font-size: 13px; line-height: 1.5; }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #475569; margin-bottom: 6px; }
+    input, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; background-color: #fff; }
+    button { width: 100%; background-color: #2563eb; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 8px; }
+    button:hover { background-color: #1d4ed8; }
+    .resultado { margin-top: 16px; padding: 16px; border-radius: 8px; display: none; }
+    .status { font-weight: 800; font-size: 15px; margin-bottom: 4px; }
+    .detalhe { font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 style="font-size: 20px; font-weight: 800;">Simulador de Notas Unifor</h1>
+    <p style="font-size: 12px; color: #93c5fd; margin-top: 4px;">Verificador de Elegibilidade e Média AV3</p>
+  </header>
+
+  <main>
+    <div class="info-box">
+      <strong>📌 Métricas Oficiais Unifor:</strong>
+      <ul style="margin-top: 6px; margin-left: 18px;">
+        <li><strong>Tradicional (AV1/AV2/AV3):</strong> Exige Média Parcial (MP) &ge; 4.0 entre AV1 e AV2 para realizar a AV3. Na AV3, exige-se nota &ge; 4.0 e Média Final &ge; 5.0.</li>
+        <li><strong>Módulo / Nota Única:</strong> Média Final = (((AV1 + AV2)/2) + AV3)/2. Aprovação exige Média Final &ge; 6.0.</li>
+      </ul>
+    </div>
+
+    <!-- Formulário Direto na Página -->
+    <div class="card">
+      <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #0f172a;">Simular Disciplina</h2>
+      
+      <div class="form-group">
+        <label>Sistemática da Disciplina</label>
+        <select id="tipo">
+          <option value="tradicional">Sistemática Tradicional (AV1, AV2 e AV3)</option>
+          <option value="nota_unica">Módulo / Nota Única (Composição AVA)</option>
+        </select>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Nota AV1 (0 a 10)</label>
+          <input type="number" id="av1" step="0.1" min="0" max="10" placeholder="Ex: 6.5">
+        </div>
+        <div class="form-group">
+          <label>Nota AV2 (0 a 10)</label>
+          <input type="number" id="av2" step="0.1" min="0" max="10" placeholder="Ex: 5.0">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Nota AV3 <span style="font-weight: 400; text-transform: none; color: #94a3b8;">(Opcional - deixe em branco se não fez)</span></label>
+        <input type="number" id="av3" step="0.1" min="0" max="10" placeholder="Ex: 4.5">
+      </div>
+
+      <button type="button" id="btn-calcular">Calcular Elegibilidade</button>
+
+      <!-- Painel de Resultado -->
+      <div id="painel-resultado" class="resultado">
+        <div id="res-status" class="status"></div>
+        <div id="res-msg" class="detalhe"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Event listener nativo ligado após o carregamento da página
+    window.addEventListener('DOMContentLoaded', function() {
+      var btn = document.getElementById('btn-calcular');
+      
+      btn.onclick = function() {
+        var tipo = document.getElementById('tipo').value;
+        var n1 = document.getElementById('av1').value;
+        var n2 = document.getElementById('av2').value;
+        var n3 = document.getElementById('av3').value;
+
+        var painel = document.getElementById('painel-resultado');
+        var st = document.getElementById('res-status');
+        var msg = document.getElementById('res-msg');
+
+        if (n1 === "" || n2 === "") {
+          alert("Por favor, preencha pelo menos as notas da AV1 e da AV2.");
+          return;
+        }
+
+        var av1 = parseFloat(n1);
+        var av2 = parseFloat(n2);
+        var av3 = n3 !== "" ? parseFloat(n3) : null;
+
+        if (av1 < 0 || av1 > 10 || av2 < 0 || av2 > 10 || (av3 !== null && (av3 < 0 || av3 > 10))) {
+          alert("Todas as notas devem estar estritamente entre 0.0 e 10.0.");
+          return;
+        }
+
+        var mp = (av1 + av2) / 2;
+        painel.style.display = "block";
+
+        if (tipo === 'nota_unica') {
+          if (av3 !== null) {
+            var mf = (mp + av3) / 2;
+            if (mf >= 6.0) {
+              painel.style.backgroundColor = "#d1fae5"; painel.style.color = "#065f46";
+              st.innerText = "APROVADO";
+              msg.innerText = "Média Final: " + mf.toFixed(1) + " (Aprovação exige MF >= 6.0)";
+            } else {
+              painel.style.backgroundColor = "#fee2e2"; painel.style.color = "#991b1b";
+              st.innerText = "REPROVADO";
+              msg.innerText = "Média Final: " + mf.toFixed(1) + " (Aprovação exige MF >= 6.0)";
+            }
+          } else {
+            var nec = Math.max(0, 12.0 - mp);
+            painel.style.backgroundColor = "#fef3c7"; painel.style.color = "#92400e";
+            st.innerText = "NECESSITA DE AV3";
+            msg.innerText = "Média Parcial (AV1+AV2): " + mp.toFixed(1) + ". Precisa tirar no mínimo " + nec.toFixed(1) + " na AV3 para obter Média Final 6.0.";
+          }
+        } else {
+          // Tradicional
+          if (mp >= 7.0) {
+            painel.style.backgroundColor = "#d1fae5"; painel.style.color = "#065f46";
+            st.innerText = "APROVADO DIRETO";
+            msg.innerText = "Média Parcial: " + mp.toFixed(1) + " (Não necessita de AV3)";
+          } else if (mp < 4.0) {
+            painel.style.backgroundColor = "#fee2e2"; painel.style.color = "#991b1b";
+            st.innerText = "REPROVADO DIRETO";
+            msg.innerText = "Média Parcial: " + mp.toFixed(1) + " (Abaixo de 4.0. Não está apto a realizar a AV3)";
+          } else {
+            var necTrad = Math.max(4.0, (10.0 - mp));
+            if (av3 !== null) {
+              var mfTrad = (mp + av3) / 2;
+              if (av3 >= 4.0 && mfTrad >= 5.0) {
+                painel.style.backgroundColor = "#d1fae5"; painel.style.color = "#065f46";
+                st.innerText = "APROVADO NA AV3";
+                msg.innerText = "Média Final: " + mfTrad.toFixed(1) + " (Nota na AV3: " + av3.toFixed(1) + ")";
+              } else {
+                painel.style.backgroundColor = "#fee2e2"; painel.style.color = "#991b1b";
+                st.innerText = "REPROVADO NA AV3";
+                msg.innerText = "Média Final: " + mfTrad.toFixed(1) + " (Regra: exige AV3 >= 4.0 e Média Final >= 5.0)";
+              }
+            } else {
+              painel.style.backgroundColor = "#dbeafe"; painel.style.color = "#1e40af";
+              st.innerText = "APTO PARA A AV3";
+              msg.innerText = "Média Parcial: " + mp.toFixed(1) + ". Precisa tirar no mínimo " + necTrad.toFixed(1) + " na AV3 (Regra: AV3 >= 4.0 e Média Final >= 5.0).";
+            }
+          }
+        }
+      };
+    });
+  </script>
+</body>
+</html>
